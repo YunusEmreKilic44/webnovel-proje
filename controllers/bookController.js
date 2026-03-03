@@ -34,7 +34,7 @@ const getSingleBook = async (req, res) => {
       .lean();
 
     const comments = await Comment.find({ book: bookId })
-      .populate("author")
+      .populate("user")
       .sort({ createdAt: -1 })
       .lean();
 
