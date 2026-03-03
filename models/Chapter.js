@@ -4,23 +4,22 @@ const chapterSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, "Bölüm başlığı zorunludur!"],
+      required: [true, "Bolum basligi zorunludur!"],
       trim: true,
-      minlength: [1, "Bölüm başlığı en az 2 karakter olmalıdır!"],
-      maxlength: [120, "Bölüm başlığı en fazla 120 karakter olmalıdır!"],
+      minlength: [1, "Bolum basligi en az 2 karakter olmalidir!"],
+      maxlength: [120, "Bolum basligi en fazla 120 karakter olmalidir!"],
     },
 
     content: {
       type: String,
-      required: [true, "Bölüm içeriği zorunludur!"],
-      minlength: [20, "Bölüm içeriği en az 20 karakter olmalıdır!"],
-      maxlength: [3000, "Bölüm içeriği en fazla 3000 karakter olmalıdır!"],
+      required: [true, "Bolum icerigi zorunludur!"],
+      minlength: [20, "Bolum icerigi en az 20 karakter olmalidir!"],
+      maxlength: [3000, "Bolum icerigi en fazla 3000 karakter olmalidir!"],
     },
     number: {
       type: Number,
-      required: [true, "Bölüm numarası zorunludur!"],
-      min: [0, "Bölüm numarası 1'den küçük olamaz!"],
-      unique: true,
+      required: [true, "Bolum numarasi zorunludur!"],
+      min: [0, "Bolum numarasi 1'den kucuk olamaz!"],
     },
     book: {
       type: mongoose.Schema.Types.ObjectId,
@@ -30,5 +29,7 @@ const chapterSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+chapterSchema.index({ book: 1, number: 1 }, { unique: true });
 
 module.exports = mongoose.model("Chapter", chapterSchema);

@@ -64,19 +64,15 @@ async function seed() {
 
   const chapters = [];
   const comments = [];
-  let globalChapterNumber = 1;
 
   createdBooks.forEach((book, bookIndex) => {
     for (let chapterNumber = 1; chapterNumber <= 20; chapterNumber += 1) {
       chapters.push({
         title: `Chapter ${chapterNumber}`,
         content: buildChapterContent(bookIndex, chapterNumber),
-        // Chapter modelinde `number` alanı global unique olduğu için
-        // çakışmayı önlemek adına artan tekil değer kullanıyoruz.
-        number: globalChapterNumber,
+        number: chapterNumber,
         book: book._id,
       });
-      globalChapterNumber += 1;
     }
 
     for (let commentNumber = 1; commentNumber <= 20; commentNumber += 1) {

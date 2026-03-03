@@ -10,7 +10,11 @@ const {
   validateUpdateChapter,
 } = require("../middlewares/validators");
 
-router.get("/", validateObjectIdParam("bookId"), chapterController.getAllChapters);
+router.get(
+  "/",
+  validateObjectIdParam("bookId"),
+  chapterController.getAllChapters,
+);
 router.get(
   "/:chapterId",
   validateObjectIdParam("bookId"),
