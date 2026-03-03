@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
+const { body, param, validationResult } = require("express-validator");
 
-const sendValidationError = (res, errors) => {
+const handleValidationErrors = (req, res, next) => {
+  const result = validationResult(req);
+  if (result.isEmpty()) return next();
+
+  const errors = result.array({ onlyFirstError: true }).map((error) => error.msg);
   return res.status(400).json({
     success: false,
     message: errors[0],
@@ -8,270 +13,227 @@ const sendValidationError = (res, errors) => {
   });
 };
 
-const isNonEmptyString = (value) =>
-  typeof value === "string" && value.trim().length > 0;
+const objectIdParamRule = (paramName) =>
+  param(paramName)
+    .custom((value) => mongoose.isValidObjectId(value))
+    .withMessage(`Gecersiz ${paramName}`);
 
-const isValidObjectId = (value) => mongoose.isValidObjectId(value);
+const validateObjectIdParam = (paramName) => [
+  objectIdParamRule(paramName),
+  handleValidationErrors,
+];
 
-const validateObjectIdParam = (paramName) => (req, res, next) => {
-  const value = req.params[paramName];
-  if (!isValidObjectId(value)) {
-    return sendValidationError(res, [`Gecersiz ${paramName}`]);
-  }
-  return next();
-};
+const validateRegister = [
+  body("username")
+    .trim()
+    .notEmpty()
+    .withMessage("username zorunludur")
+    .isLength({ min: 3, max: 30 })
+    .withMessage("username 3 ile 30 karakter arasinda olmalidir"),
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("email zorunludur")
+    .isEmail()
+    .withMessage("email formati gecersiz"),
+  body("password")
+    .notEmpty()
+    .withMessage("password zorunludur")
+    .isLength({ min: 6, max: 20 })
+    .withMessage("password 6 ile 20 karakter arasinda olmalidir"),
+  handleValidationErrors,
+];
 
-const validateRegister = (req, res, next) => {
-  const { username, email, password } = req.body;
-  const errors = [];
+const validateLogin = [
+  body("email").trim().notEmpty().withMessage("email zorunludur"),
+  body("password").notEmpty().withMessage("password zorunludur"),
+  handleValidationErrors,
+];
 
-  if (!isNonEmptyString(username)) {
-    errors.push("username zorunludur");
-  } else if (username.trim().length < 3 || username.trim().length > 30) {
-    errors.push("username 3 ile 30 karakter arasinda olmalidir");
-  }
+const validateRefreshTokenRequest = [
+  body("refreshToken").trim().notEmpty().withMessage("refreshToken zorunludur"),
+  handleValidationErrors,
+];
 
-  if (!isNonEmptyString(email)) {
-    errors.push("email zorunludur");
-  } else {
-    const normalizedEmail = email.trim().toLowerCase();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(normalizedEmail)) {
-      errors.push("email formati gecersiz");
+const validateCreateBook = [
+  body("title")
+    .trim()
+    .notEmpty()
+    .withMessage("title zorunludur")
+    .isLength({ min: 2, max: 80 })
+    .withMessage("title 2 ile 80 karakter arasinda olmalidir"),
+  body("description")
+    .optional()
+    .isString()
+    .withMessage("description string olmalidir")
+    .isLength({ max: 2000 })
+    .withMessage("description en fazla 2000 karakter olabilir"),
+  body("coverImage")
+    .optional()
+    .isString()
+    .withMessage("coverImage string olmalidir"),
+  handleValidationErrors,
+];
+
+const validateUpdateBook = [
+  body("title")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("title bos olamaz")
+    .isLength({ min: 2, max: 80 })
+    .withMessage("title 2 ile 80 karakter arasinda olmalidir"),
+  body("description")
+    .optional()
+    .isString()
+    .withMessage("description string olmalidir")
+    .isLength({ max: 2000 })
+    .withMessage("description en fazla 2000 karakter olabilir"),
+  body("coverImage")
+    .optional()
+    .isString()
+    .withMessage("coverImage string olmalidir"),
+  body().custom((payload) => {
+    const hasAnyField =
+      payload &&
+      (payload.title !== undefined ||
+        payload.description !== undefined ||
+        payload.coverImage !== undefined);
+
+    if (!hasAnyField) {
+      throw new Error("Guncellenecek en az bir alan gondermelisiniz");
     }
-  }
+    return true;
+  }),
+  handleValidationErrors,
+];
 
-  if (!isNonEmptyString(password)) {
-    errors.push("password zorunludur");
-  } else if (password.length < 6 || password.length > 20) {
-    errors.push("password 6 ile 20 karakter arasinda olmalidir");
-  }
+const validateCreateChapter = [
+  objectIdParamRule("bookId"),
+  body("title")
+    .trim()
+    .notEmpty()
+    .withMessage("title zorunludur")
+    .isLength({ min: 1, max: 120 })
+    .withMessage("title 1 ile 120 karakter arasinda olmalidir"),
+  body("content")
+    .trim()
+    .notEmpty()
+    .withMessage("content zorunludur")
+    .isLength({ min: 20, max: 3000 })
+    .withMessage("content 20 ile 3000 karakter arasinda olmalidir"),
+  body("number")
+    .notEmpty()
+    .withMessage("number zorunludur")
+    .isInt({ min: 0 })
+    .withMessage("number 0 veya daha buyuk tam sayi olmalidir")
+    .toInt(),
+  handleValidationErrors,
+];
 
-  if (errors.length) return sendValidationError(res, errors);
-  return next();
-};
+const validateUpdateChapter = [
+  objectIdParamRule("bookId"),
+  objectIdParamRule("chapterId"),
+  body("title")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("title bos olamaz")
+    .isLength({ min: 1, max: 120 })
+    .withMessage("title 1 ile 120 karakter arasinda olmalidir"),
+  body("content")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("content bos olamaz")
+    .isLength({ min: 20, max: 3000 })
+    .withMessage("content 20 ile 3000 karakter arasinda olmalidir"),
+  body("number")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("number 0 veya daha buyuk tam sayi olmalidir")
+    .toInt(),
+  body().custom((payload) => {
+    const hasAnyField =
+      payload &&
+      (payload.title !== undefined ||
+        payload.content !== undefined ||
+        payload.number !== undefined);
 
-const validateLogin = (req, res, next) => {
-  const { email, password } = req.body;
-  const errors = [];
-
-  if (!isNonEmptyString(email)) errors.push("email zorunludur");
-  if (!isNonEmptyString(password)) errors.push("password zorunludur");
-
-  if (errors.length) return sendValidationError(res, errors);
-  return next();
-};
-
-const validateRefreshTokenRequest = (req, res, next) => {
-  const { refreshToken } = req.body;
-  if (!isNonEmptyString(refreshToken)) {
-    return sendValidationError(res, ["refreshToken zorunludur"]);
-  }
-  return next();
-};
-
-const validateCreateBook = (req, res, next) => {
-  const { title, description, coverImage } = req.body;
-  const errors = [];
-
-  if (!isNonEmptyString(title)) {
-    errors.push("title zorunludur");
-  } else if (title.trim().length < 2 || title.trim().length > 80) {
-    errors.push("title 2 ile 80 karakter arasinda olmalidir");
-  }
-
-  if (description !== undefined) {
-    if (typeof description !== "string") {
-      errors.push("description string olmalidir");
-    } else if (description.length > 2000) {
-      errors.push("description en fazla 2000 karakter olabilir");
+    if (!hasAnyField) {
+      throw new Error("Guncellenecek en az bir alan gondermelisiniz");
     }
-  }
+    return true;
+  }),
+  handleValidationErrors,
+];
 
-  if (coverImage !== undefined && typeof coverImage !== "string") {
-    errors.push("coverImage string olmalidir");
-  }
+const validateCreateComment = [
+  objectIdParamRule("bookId"),
+  body("content")
+    .trim()
+    .notEmpty()
+    .withMessage("content zorunludur")
+    .isLength({ max: 2000 })
+    .withMessage("content en fazla 2000 karakter olabilir"),
+  handleValidationErrors,
+];
 
-  if (errors.length) return sendValidationError(res, errors);
-  return next();
-};
+const validateUpdateComment = [
+  objectIdParamRule("bookId"),
+  objectIdParamRule("commentId"),
+  body("content")
+    .notEmpty()
+    .withMessage("content guncellemesi zorunludur")
+    .trim()
+    .notEmpty()
+    .withMessage("content bos olamaz")
+    .isLength({ max: 2000 })
+    .withMessage("content en fazla 2000 karakter olabilir"),
+  handleValidationErrors,
+];
 
-const validateUpdateBook = (req, res, next) => {
-  const { title, description, coverImage } = req.body;
-  const errors = [];
+const validateUpdateUser = [
+  objectIdParamRule("userId"),
+  body("username")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("username bos olamaz")
+    .isLength({ min: 3, max: 30 })
+    .withMessage("username 3 ile 30 karakter arasinda olmalidir"),
+  body("email")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("email bos olamaz")
+    .isEmail()
+    .withMessage("email formati gecersiz"),
+  body("password")
+    .optional()
+    .notEmpty()
+    .withMessage("password bos olamaz")
+    .isLength({ min: 6, max: 20 })
+    .withMessage("password 6 ile 20 karakter arasinda olmalidir"),
+  body("avatar").optional().isString().withMessage("avatar string olmalidir"),
+  body().custom((payload) => {
+    const hasAnyField =
+      payload &&
+      (payload.username !== undefined ||
+        payload.email !== undefined ||
+        payload.password !== undefined ||
+        payload.avatar !== undefined);
 
-  if (
-    (title === undefined || title === "") &&
-    (description === undefined || description === "") &&
-    (coverImage === undefined || coverImage === "")
-  ) {
-    errors.push("Guncellenecek en az bir alan gondermelisiniz");
-  }
-
-  if (title !== undefined) {
-    if (!isNonEmptyString(title)) {
-      errors.push("title bos olamaz");
-    } else if (title.trim().length < 2 || title.trim().length > 80) {
-      errors.push("title 2 ile 80 karakter arasinda olmalidir");
+    if (!hasAnyField) {
+      throw new Error("Guncellenecek en az bir alan gondermelisiniz");
     }
-  }
-
-  if (description !== undefined) {
-    if (typeof description !== "string") {
-      errors.push("description string olmalidir");
-    } else if (description.length > 2000) {
-      errors.push("description en fazla 2000 karakter olabilir");
-    }
-  }
-
-  if (coverImage !== undefined && typeof coverImage !== "string") {
-    errors.push("coverImage string olmalidir");
-  }
-
-  if (errors.length) return sendValidationError(res, errors);
-  return next();
-};
-
-const validateCreateChapter = (req, res, next) => {
-  const { title, content, number } = req.body;
-  const errors = [];
-
-  if (!isNonEmptyString(title)) {
-    errors.push("title zorunludur");
-  } else if (title.trim().length < 1 || title.trim().length > 120) {
-    errors.push("title 1 ile 120 karakter arasinda olmalidir");
-  }
-
-  if (!isNonEmptyString(content)) {
-    errors.push("content zorunludur");
-  } else if (content.length < 20 || content.length > 3000) {
-    errors.push("content 20 ile 3000 karakter arasinda olmalidir");
-  }
-
-  if (number === undefined || number === null || number === "") {
-    errors.push("number zorunludur");
-  } else if (!Number.isInteger(Number(number)) || Number(number) < 0) {
-    errors.push("number 0 veya daha buyuk tam sayi olmalidir");
-  }
-
-  if (errors.length) return sendValidationError(res, errors);
-  return next();
-};
-
-const validateUpdateChapter = (req, res, next) => {
-  const { title, content, number } = req.body;
-  const errors = [];
-
-  if (title === undefined && content === undefined && number === undefined) {
-    errors.push("Guncellenecek en az bir alan gondermelisiniz");
-  }
-
-  if (title !== undefined) {
-    if (!isNonEmptyString(title)) {
-      errors.push("title bos olamaz");
-    } else if (title.trim().length < 1 || title.trim().length > 120) {
-      errors.push("title 1 ile 120 karakter arasinda olmalidir");
-    }
-  }
-
-  if (content !== undefined) {
-    if (!isNonEmptyString(content)) {
-      errors.push("content bos olamaz");
-    } else if (content.length < 20 || content.length > 3000) {
-      errors.push("content 20 ile 3000 karakter arasinda olmalidir");
-    }
-  }
-
-  if (number !== undefined) {
-    if (!Number.isInteger(Number(number)) || Number(number) < 0) {
-      errors.push("number 0 veya daha buyuk tam sayi olmalidir");
-    }
-  }
-
-  if (errors.length) return sendValidationError(res, errors);
-  return next();
-};
-
-const validateCreateComment = (req, res, next) => {
-  const { content } = req.body;
-  if (!isNonEmptyString(content)) {
-    return sendValidationError(res, ["content zorunludur"]);
-  }
-
-  if (content.trim().length > 2000) {
-    return sendValidationError(res, ["content en fazla 2000 karakter olabilir"]);
-  }
-
-  return next();
-};
-
-const validateUpdateComment = (req, res, next) => {
-  const { content } = req.body;
-
-  if (content === undefined) {
-    return sendValidationError(res, ["content guncellemesi zorunludur"]);
-  }
-
-  if (!isNonEmptyString(content)) {
-    return sendValidationError(res, ["content bos olamaz"]);
-  }
-
-  if (content.trim().length > 2000) {
-    return sendValidationError(res, ["content en fazla 2000 karakter olabilir"]);
-  }
-
-  return next();
-};
-
-const validateUpdateUser = (req, res, next) => {
-  const { username, email, password, avatar } = req.body;
-  const errors = [];
-
-  if (
-    username === undefined &&
-    email === undefined &&
-    password === undefined &&
-    avatar === undefined
-  ) {
-    errors.push("Guncellenecek en az bir alan gondermelisiniz");
-  }
-
-  if (username !== undefined) {
-    if (!isNonEmptyString(username)) {
-      errors.push("username bos olamaz");
-    } else if (username.trim().length < 3 || username.trim().length > 30) {
-      errors.push("username 3 ile 30 karakter arasinda olmalidir");
-    }
-  }
-
-  if (email !== undefined) {
-    if (!isNonEmptyString(email)) {
-      errors.push("email bos olamaz");
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email.trim().toLowerCase())) {
-        errors.push("email formati gecersiz");
-      }
-    }
-  }
-
-  if (password !== undefined) {
-    if (!isNonEmptyString(password)) {
-      errors.push("password bos olamaz");
-    } else if (password.length < 6 || password.length > 20) {
-      errors.push("password 6 ile 20 karakter arasinda olmalidir");
-    }
-  }
-
-  if (avatar !== undefined && typeof avatar !== "string") {
-    errors.push("avatar string olmalidir");
-  }
-
-  if (errors.length) return sendValidationError(res, errors);
-  return next();
-};
+    return true;
+  }),
+  handleValidationErrors,
+];
 
 module.exports = {
+  handleValidationErrors,
   validateObjectIdParam,
   validateRegister,
   validateLogin,

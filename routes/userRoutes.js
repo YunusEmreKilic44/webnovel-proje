@@ -1,12 +1,31 @@
 const express = require("express");
 const userController = require("../controllers/userController");
 const { verifyAccessToken } = require("../middlewares/auth");
+const {
+  validateObjectIdParam,
+  validateUpdateUser,
+} = require("../middlewares/validators");
 
 const router = express.Router();
 
 router.get("/", verifyAccessToken, userController.getAllUsers);
-router.get("/:userId", verifyAccessToken, userController.getSingleUser);
-router.put("/:userId", verifyAccessToken, userController.updateUser);
-router.delete("/:userId", verifyAccessToken, userController.deleteUser);
+router.get(
+  "/:userId",
+  verifyAccessToken,
+  validateObjectIdParam("userId"),
+  userController.getSingleUser,
+);
+router.put(
+  "/:userId",
+  verifyAccessToken,
+  validateUpdateUser,
+  userController.updateUser,
+);
+router.delete(
+  "/:userId",
+  verifyAccessToken,
+  validateObjectIdParam("userId"),
+  userController.deleteUser,
+);
 
 module.exports = router;

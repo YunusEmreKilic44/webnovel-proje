@@ -2,11 +2,27 @@ const express = require("express");
 const router = express.Router();
 const bookController = require("../controllers/bookController");
 const { verifyAccessToken } = require("../middlewares/auth");
+const {
+  validateObjectIdParam,
+  validateCreateBook,
+  validateUpdateBook,
+} = require("../middlewares/validators");
 
 router.get("/", bookController.getAllBooks);
-router.get("/:bookId", bookController.getSingleBook);
-router.post("/", verifyAccessToken, bookController.createBook);
-router.put("/:bookId", verifyAccessToken, bookController.updateBook);
-router.delete("/:bookId", verifyAccessToken, bookController.deleteBook);
+router.get("/:bookId", validateObjectIdParam("bookId"), bookController.getSingleBook);
+router.post("/", verifyAccessToken, validateCreateBook, bookController.createBook);
+router.put(
+  "/:bookId",
+  verifyAccessToken,
+  validateObjectIdParam("bookId"),
+  validateUpdateBook,
+  bookController.updateBook,
+);
+router.delete(
+  "/:bookId",
+  verifyAccessToken,
+  validateObjectIdParam("bookId"),
+  bookController.deleteBook,
+);
 
 module.exports = router;
