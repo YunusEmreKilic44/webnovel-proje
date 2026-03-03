@@ -62,24 +62,37 @@ async function seed() {
 
   const createdBooks = await Book.insertMany(books);
 
-  const chapters = Array.from({ length: 20 }, (_, i) => ({
-    title: `Chapter ${i + 1}`,
-    content: buildChapterContent(i % createdBooks.length, i + 1),
-    number: i + 1,
-    book: createdBooks[i % createdBooks.length]._id,
-  }));
+  const chapters = [];
+  const comments = [];
+  let globalChapterNumber = 1;
+
+  createdBooks.forEach((book, bookIndex) => {
+    for (let chapterNumber = 1; chapterNumber <= 20; chapterNumber += 1) {
+      chapters.push({
+        title: `Chapter ${chapterNumber}`,
+        content: buildChapterContent(bookIndex, chapterNumber),
+        // Chapter modelinde `number` alanı global unique olduğu için
+        // çakışmayı önlemek adına artan tekil değer kullanıyoruz.
+        number: globalChapterNumber,
+        book: book._id,
+      });
+      globalChapterNumber += 1;
+    }
+
+    for (let commentNumber = 1; commentNumber <= 20; commentNumber += 1) {
+      comments.push({
+        book: book._id,
+        user: userIds[(bookIndex + commentNumber) % userIds.length],
+        content: `Sample comment ${commentNumber} for book ${bookIndex + 1}: the pacing and character moments are engaging.`,
+      });
+    }
+  });
 
   await Chapter.insertMany(chapters);
 
-  const comments = Array.from({ length: 20 }, (_, i) => ({
-    book: createdBooks[i % createdBooks.length]._id,
-    user: userIds[(i + 1) % userIds.length],
-    content: `Sample comment ${i + 1}: the pacing and character moments are engaging.`,
-  }));
-
   await Comment.insertMany(comments);
 
-  console.log("Seeding completed: 20 books, 20 chapters, 20 comments.");
+  console.log("Seeding completed: 20 books, 400 chapters, 400 comments.");
 }
 
 seed()

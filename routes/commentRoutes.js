@@ -1,5 +1,5 @@
 const express = require("express");
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 const commentController = require("../controllers/commentController");
 const { verifyAccessToken } = require("../middlewares/auth");
