@@ -9,11 +9,14 @@ const userRoutes = require("./routes/userRoutes");
 const commentRoutes = require("./routes/commentRoutes");
 const authRoutes = require("./routes/authRoutes.js");
 const cors = require("cors");
+const helmet = require("helmet");
 const corsOptions = require("./config/corsConfig.js");
+const helmetConfig = require("./config/helmetConfig");
 
 connectDB();
 
 app.use(cors(corsOptions));
+app.use(helmet(helmetConfig));
 
 app.use(logger);
 
