@@ -1,6 +1,7 @@
 const express = require("express");
 const userController = require("../controllers/userController");
 const { verifyAccessToken } = require("../middlewares/auth");
+const { authorizeRoles } = require("../middlewares/roles");
 const {
   validateObjectIdParam,
   validateUpdateUser,
@@ -8,7 +9,7 @@ const {
 
 const router = express.Router();
 
-router.get("/", verifyAccessToken, userController.getAllUsers);
+router.get("/", verifyAccessToken, authorizeRoles("admin"), userController.getAllUsers);
 router.get(
   "/:userId",
   verifyAccessToken,

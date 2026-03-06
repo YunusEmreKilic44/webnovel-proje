@@ -32,6 +32,10 @@ app.use("/api/books", bookRoutes);
 app.use("/api/books/:bookId/chapters", chapterRoutes);
 app.use("/api/books/:bookId/comments", commentRoutes);
 
+app.use((req, res) => {
+  res.status(404).send("Page not found!");
+});
+
 app.listen(process.env.PORT, () => {
   console.log(`Sunucu: ${process.env.PORT} portunda çalışıyor!`);
 });
