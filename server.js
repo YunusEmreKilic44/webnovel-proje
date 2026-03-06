@@ -8,8 +8,12 @@ const bookRoutes = require("./routes/bookRoutes");
 const userRoutes = require("./routes/userRoutes");
 const commentRoutes = require("./routes/commentRoutes");
 const authRoutes = require("./routes/authRoutes.js");
+const cors = require("cors");
+const corsOptions = require("./config/corsConfig.js");
 
 connectDB();
+
+app.use(cors(corsOptions));
 
 app.use(logger);
 
