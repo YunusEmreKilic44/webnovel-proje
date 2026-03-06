@@ -4,6 +4,7 @@ const Chapter = require("../models/Chapter");
 const Comment = require("../models/Comment");
 
 const getAuthUserId = (req) => req.user?._id || req.user?.id;
+const normalizeUploadPath = (filePath) => String(filePath || "").replace(/\\/g, "/");
 
 const getAllBooks = async (req, res) => {
   try {
@@ -65,13 +66,18 @@ const updateBook = async (req, res) => {
     }
 
     const { title, description, coverImage } = req.body;
+    const uploadedCoverImage = req.file ? normalizeUploadPath(req.file.path) : null;
     const updatedPayload = {};
 
     if (title && title.trim()) updatedPayload.title = title;
     if (description && description.trim()) {
       updatedPayload.description = description;
     }
-    if (coverImage && coverImage.trim()) updatedPayload.coverImage = coverImage;
+    if (uploadedCoverImage) {
+      updatedPayload.coverImage = uploadedCoverImage;
+    } else if (coverImage && coverImage.trim()) {
+      updatedPayload.coverImage = coverImage.trim();
+    }
 
     if (!Object.keys(updatedPayload).length) {
       return res.status(400).json({
@@ -113,6 +119,9 @@ const createBook = async (req, res) => {
   try {
     const { title, description, coverImage } = req.body;
     const userId = getAuthUserId(req);
+    const uploadedCoverImage = req.file ? normalizeUploadPath(req.file.path) : null;
+    const resolvedCoverImage =
+      uploadedCoverImage || (coverImage && coverImage.trim()) || "";
 
     if (!userId) {
       return res.status(401).json({
@@ -124,7 +133,7 @@ const createBook = async (req, res) => {
     const book = await Book.create({
       title,
       description,
-      coverImage,
+      coverImage: resolvedCoverImage,
       author: userId,
     });
 

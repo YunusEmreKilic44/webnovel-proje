@@ -93,14 +93,14 @@ const validateUpdateBook = [
     .optional()
     .isString()
     .withMessage("coverImage string olmalidir"),
-  body().custom((payload) => {
+  body().custom((payload, { req }) => {
     const hasAnyField =
       payload &&
       (payload.title !== undefined ||
         payload.description !== undefined ||
         payload.coverImage !== undefined);
 
-    if (!hasAnyField) {
+    if (!hasAnyField && !req.file) {
       throw new Error("Guncellenecek en az bir alan gondermelisiniz");
     }
     return true;
@@ -216,7 +216,7 @@ const validateUpdateUser = [
     .isLength({ min: 6, max: 20 })
     .withMessage("password 6 ile 20 karakter arasinda olmalidir"),
   body("avatar").optional().isString().withMessage("avatar string olmalidir"),
-  body().custom((payload) => {
+  body().custom((payload, { req }) => {
     const hasAnyField =
       payload &&
       (payload.username !== undefined ||
@@ -224,7 +224,7 @@ const validateUpdateUser = [
         payload.password !== undefined ||
         payload.avatar !== undefined);
 
-    if (!hasAnyField) {
+    if (!hasAnyField && !req.file) {
       throw new Error("Guncellenecek en az bir alan gondermelisiniz");
     }
     return true;

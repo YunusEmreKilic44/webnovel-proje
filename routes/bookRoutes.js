@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const bookController = require("../controllers/bookController");
 const { verifyAccessToken } = require("../middlewares/auth");
+const { uploadBookCover } = require("../middlewares/upload");
 const {
   validateObjectIdParam,
   validateCreateBook,
@@ -10,10 +11,17 @@ const {
 
 router.get("/", bookController.getAllBooks);
 router.get("/:bookId", validateObjectIdParam("bookId"), bookController.getSingleBook);
-router.post("/", verifyAccessToken, validateCreateBook, bookController.createBook);
+router.post(
+  "/",
+  verifyAccessToken,
+  uploadBookCover,
+  validateCreateBook,
+  bookController.createBook,
+);
 router.put(
   "/:bookId",
   verifyAccessToken,
+  uploadBookCover,
   validateObjectIdParam("bookId"),
   validateUpdateBook,
   bookController.updateBook,

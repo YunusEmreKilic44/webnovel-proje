@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const bcryptjs = require("bcryptjs");
+const normalizeUploadPath = (filePath) => String(filePath || "").replace(/\\/g, "/");
 
 const getAllUsers = async (req, res) => {
   try {
@@ -37,6 +38,7 @@ const updateUser = async (req, res) => {
     }
 
     const { username, email, password, avatar } = req.body;
+    const uploadedAvatar = req.file ? normalizeUploadPath(req.file.path) : null;
     const updatePayload = {};
 
     if (email && email.trim()) updatePayload.email = email.trim();
@@ -53,7 +55,11 @@ const updateUser = async (req, res) => {
       const salt = await bcryptjs.genSalt(10);
       updatePayload.password = await bcryptjs.hash(rawPassword, salt);
     }
-    if (avatar && avatar.trim()) updatePayload.avatar = avatar.trim();
+    if (uploadedAvatar) {
+      updatePayload.avatar = uploadedAvatar;
+    } else if (avatar && avatar.trim()) {
+      updatePayload.avatar = avatar.trim();
+    }
 
     if (!Object.keys(updatePayload).length) {
       return res.status(400).json({

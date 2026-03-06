@@ -2,6 +2,7 @@ const express = require("express");
 const userController = require("../controllers/userController");
 const { verifyAccessToken } = require("../middlewares/auth");
 const { authorizeRoles } = require("../middlewares/roles");
+const { uploadAvatar } = require("../middlewares/upload");
 const {
   validateObjectIdParam,
   validateUpdateUser,
@@ -19,6 +20,7 @@ router.get(
 router.put(
   "/:userId",
   verifyAccessToken,
+  uploadAvatar,
   validateUpdateUser,
   userController.updateUser,
 );

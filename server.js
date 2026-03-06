@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const path = require("path");
 const app = express();
 const connectDB = require("./config/dbConfig");
 const { logger } = require("./middlewares/logEvent");
@@ -25,6 +26,7 @@ app.use(express.json());
 
 // Content-Type application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: false }));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
