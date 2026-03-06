@@ -21,7 +21,13 @@ const getSingleBook = async (req, res) => {
   try {
     const { bookId } = req.params;
 
-    const book = await Book.findById(bookId).populate("author").lean();
+    const book = await Book.findByIdAndUpdate(
+      bookId,
+      { $inc: { viewCount: 1 } },
+      { new: true },
+    )
+      .populate("author")
+      .lean();
 
     if (!book) {
       return res

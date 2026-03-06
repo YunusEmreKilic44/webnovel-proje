@@ -26,6 +26,11 @@ const bookSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "Yazar zorunludur!"],
     },
+    viewCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   { timestamps: true },
 );
